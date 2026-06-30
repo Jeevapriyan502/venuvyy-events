@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum DevelopmentRating {
+  COLD    // New lead, no engagement yet
+  WARM    // Responded or showed interest
+  HOT     // Ready to book / negotiating
+  CONVERTED
+  LOST
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  BOOKED
+  CLOSED
+}
+
+// ─── Admin users (synced with Supabase Auth) ─────────────────────────────────
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String
+  role       UserRole @default(ADMIN)
+  supabaseId String?  @unique // Supabase Auth user UUID
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  packages Package[]
+}
+
+// ─── CRM contacts (lead pipeline) ────────────────────────────────────────────
+
+model CrmContact {
+  id                String            @id @default(cuid())
+  name              String
+  email             String            @unique
+  phone             String?
+  company           String?
+  developmentRating DevelopmentRating @default(COLD)
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  enquiries Enquiry[]
+}
+
+// ─── Event packages (images stored in Supabase Storage) ──────────────────────
+
+model Package {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?  // Public URL from Supabase Storage bucket
+  eventType   String?  // Wedding, Corporate, Private Party
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  enquiries   Enquiry[]
+}
+
+// ─── Customer form submissions (landing page) ──────────────────────────────────
+
+model Enquiry {
+  id         String        @id @default(cuid())
+  name       String
+  email      String
+  eventType  String
+  eventDate  String
+  guestCount Int
+  message    String?
+  status     EnquiryStatus @default(NEW)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  contactId String?
+  contact   CrmContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  packageId String?
+  package   Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
