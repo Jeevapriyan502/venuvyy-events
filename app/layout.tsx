@@ -1,23 +1,21 @@
 import type { Metadata } from "next";
-import { Cinzel, Montserrat } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Lora } from "next/font/google";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
-const cinzel = Cinzel({
-  variable: "--font-logo",
+const lora = Lora({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
-});
-
-const montserrat = Montserrat({
-  variable: "--font-tagline",
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  variable: "--font-lora",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Venuvyy Events | Creating Moments, Capturing Memories",
+  title: "Venuvyy Events | Event Planners — Celebrations Worldwide",
   description:
-    "Premium event planning for weddings, corporate events, and private parties.",
+    "Premium event planning for weddings, surprises, and celebrations — thoughtful design, warm hospitality, and flawless execution.",
 };
 
 export default function RootLayout({
@@ -26,11 +24,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${cinzel.variable} ${montserrat.variable} h-full antialiased`}
+    <ClerkProvider
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      signInFallbackRedirectUrl="/auth/callback"
+      signUpFallbackRedirectUrl="/auth/callback"
+      appearance={clerkAppearance}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
-    </html>
+      <html
+        lang="en"
+        className={`${GeistSans.variable} ${GeistMono.variable} ${lora.variable} h-full antialiased`}
+      >
+        <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

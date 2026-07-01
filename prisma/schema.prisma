@@ -31,6 +31,14 @@ enum EnquiryStatus {
   CLOSED
 }
 
+enum CustomerEventStatus {
+  PLANNED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 // ─── Admin users (synced with Supabase Auth) ─────────────────────────────────
 
 model User {
@@ -69,7 +77,7 @@ model Package {
   description String?
   price       Decimal  @db.Decimal(10, 2)
   imageUrl    String?  // Public URL from Supabase Storage bucket
-  eventType   String?  // Wedding, Corporate, Private Party
+  eventType   String?  // Wedding, Corporate Event, Birthday Party, etc.
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -77,6 +85,19 @@ model Package {
   createdById String?
   createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
   enquiries   Enquiry[]
+}
+
+// ─── Memory gallery (happy clients — images in Supabase Storage) ───────────────
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  title     String?
+  caption   String?
+  imageUrl  String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ─── Customer form submissions (landing page) ──────────────────────────────────
@@ -102,4 +123,24 @@ model Enquiry {
   @@index([email])
   @@index([status])
   @@index([createdAt])
+}
+
+// ─── Customer booked events (visible after login at /my-events) ──────────────
+
+model CustomerEvent {
+  id            String              @id @default(cuid())
+  customerEmail String
+  clerkUserId   String?
+  title         String
+  eventType     String?
+  eventDate     String?
+  guestCount    Int?
+  description   String?
+  imageUrl      String?
+  status        CustomerEventStatus @default(PLANNED)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([customerEmail])
+  @@index([clerkUserId])
 }

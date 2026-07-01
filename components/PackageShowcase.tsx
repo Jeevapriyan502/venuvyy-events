@@ -1,97 +1,163 @@
 import Image from "next/image";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import EventPlanningLink from "@/components/EventPlanningLink";
+import PlanningLink from "@/components/PlanningLink";
+import { isEventType } from "@/lib/event-types";
 
-export default async function PackageShowcase() {
+export const dynamic = "force-dynamic";
+
+export default async function PackageShowcase({
+  eventType,
+  variant = "home",
+  backHref,
+}: {
+  eventType?: string;
+  variant?: "home" | "event";
+  backHref?: string;
+}) {
+  const activeFilter = eventType && isEventType(eventType) ? eventType : undefined;
+
   const packages = await prisma.package.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(activeFilter ? { eventType: activeFilter } : {}),
+    },
     orderBy: { createdAt: "desc" },
-    take: 6,
+    take: 12,
   });
 
+  const useEventPlanning = variant === "event" && activeFilter;
+
   return (
-    <section id="packages" className="bg-[#111827] py-24">
-      <div className="mx-auto max-w-6xl px-6 text-left">
-        <p className="font-tagline text-sm uppercase tracking-[0.35em] text-[#d4af37]">
-          Curated Experiences
-        </p>
-        <h2 className="mt-4 font-logo text-4xl text-white md:text-5xl">Event Packages</h2>
-        <p className="mt-4 max-w-xl text-slate-400">
-          {packages.length > 0
-            ? "Handcrafted packages designed for unforgettable celebrations."
-            : "Premium packages coming soon. Browse below or start planning a custom experience."}
-        </p>
-
-        <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {packages.map((pkg) => (
-            <article
-              key={pkg.id}
-              className="group overflow-hidden rounded-2xl border border-[#d4af37]/10 bg-[#151c2c] transition hover:border-[#d4af37]/40 hover:shadow-2xl hover:shadow-[#d4af37]/5"
-            >
-              <div className="relative h-52 overflow-hidden bg-[#0c1220]">
-                {pkg.imageUrl ? (
-                  <Image
-                    src={pkg.imageUrl}
-                    alt={pkg.title}
-                    fill
-                    className="object-cover transition duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-5xl opacity-30">✦</div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#151c2c] to-transparent" />
-                {pkg.eventType && (
-                  <span className="absolute left-4 top-4 rounded-full bg-[#d4af37]/90 px-3 py-1 text-xs font-medium text-[#1a1a1b]">
-                    {pkg.eventType}
-                  </span>
-                )}
-              </div>
-              <div className="p-6">
-                <h3 className="font-logo text-xl text-white">{pkg.title}</h3>
-                {pkg.description && (
-                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-400">
-                    {pkg.description}
-                  </p>
-                )}
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-lg font-medium text-[#d4af37]">
-                    ₹{Number(pkg.price).toLocaleString("en-IN")}
-                  </p>
-                  <a
-                    href="#consultation"
-                    className="text-sm text-slate-400 transition hover:text-[#d4af37]"
-                  >
-                    Enquire →
-                  </a>
-                </div>
-              </div>
-            </article>
-          ))}
-
-          {/* Custom package card */}
-          <article className="flex flex-col overflow-hidden rounded-2xl border border-dashed border-[#d4af37]/40 bg-[#151c2c] p-8 transition hover:border-[#d4af37]/70 hover:bg-[#1a2236]">
-            <span className="text-3xl text-[#d4af37]">✧</span>
-            <h3 className="mt-4 font-logo text-xl text-white">Custom Package</h3>
-            <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-400">
-              Every detail shaped around your vision — venue, decor, catering, and timeline built
-              from scratch for your celebration.
+    <section
+      id={variant === "home" ? "packages" : undefined}
+      className={`${variant === "home" ? "scroll-mt-20" : ""} border-b border-border section-tone-a py-12 md:py-16`}
+    >
+      <div className="section-wrap">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="section-label">Featured collection</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              {activeFilter ? `${activeFilter} packages` : "Event packages"}
+            </h2>
+            <p className="font-description mt-3 max-w-xl text-muted">
+              {activeFilter
+                ? packages.length > 0
+                  ? `${packages.length} package${packages.length === 1 ? "" : "s"} for ${activeFilter.toLowerCase()}.`
+                  : `No packages listed for ${activeFilter} yet — start planning with us.`
+                : packages.length > 0
+                  ? "Curated packages for unforgettable celebrations. Each can be tailored."
+                  : "Packages appear here as you add them in admin. Scroll to explore soon."}
             </p>
-            <a
-              href="#custom-planning"
-              className="mt-6 inline-block rounded-full border border-[#d4af37]/50 px-6 py-2.5 text-center text-sm font-medium text-[#d4af37] transition hover:bg-[#d4af37]/10"
+          </div>
+          {activeFilter && backHref && (
+            <Link
+              href={backHref}
+              className="shrink-0 text-sm font-medium text-warm hover:text-warm-hover"
             >
-              Start Planning
-            </a>
-          </article>
+              ← Back to events
+            </Link>
+          )}
+          {activeFilter && variant === "home" && (
+            <Link
+              href="/#packages"
+              className="shrink-0 text-sm font-medium text-warm hover:text-warm-hover"
+            >
+              View all packages →
+            </Link>
+          )}
         </div>
 
-        {packages.length === 0 && (
-          <p className="mt-8 text-sm text-slate-500">
-            More packages will appear here as they are added.{" "}
-            <a href="#custom-planning" className="text-[#d4af37] hover:underline">
-              Start planning a custom event →
-            </a>
-          </p>
+        {packages.length > 0 ? (
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {packages.map((pkg) => (
+              <article key={pkg.id} className="card group overflow-hidden">
+                <div className="relative h-48 overflow-hidden bg-surface">
+                  {pkg.imageUrl ? (
+                    <Image
+                      src={pkg.imageUrl}
+                      alt={pkg.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-surface-muted text-sm text-muted">
+                      Package image
+                    </div>
+                  )}
+                  <span className="absolute left-3 top-3 rounded-md bg-warm px-2.5 py-1 text-xs font-medium text-white">
+                    Gift a memory
+                  </span>
+                  {pkg.eventType && (
+                    <span className="absolute bottom-3 left-3 rounded-md border border-border bg-surface/95 px-2 py-1 text-xs text-muted backdrop-blur-sm">
+                      {pkg.eventType}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="font-medium text-foreground">{pkg.title}</h3>
+                  {pkg.description && (
+                    <p className="font-description mt-2 line-clamp-2 text-sm leading-relaxed text-muted">
+                      {pkg.description}
+                    </p>
+                  )}
+                  <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                    <p className="text-lg font-semibold text-foreground">
+                      ₹{Number(pkg.price).toLocaleString("en-IN")}
+                    </p>
+                    {useEventPlanning ? (
+                      <EventPlanningLink
+                        eventType={activeFilter}
+                        className="text-sm font-medium text-warm hover:text-warm-hover"
+                      >
+                        Explore Package →
+                      </EventPlanningLink>
+                    ) : (
+                      <PlanningLink className="text-sm font-medium text-warm hover:text-warm-hover">
+                        Explore Package →
+                      </PlanningLink>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="card mt-12 border-dashed p-12 text-left">
+            <p className="text-muted">
+              {activeFilter
+                ? `No packages for ${activeFilter} yet — tell us your vision and we'll build one.`
+                : "No packages yet — add them from the admin dashboard."}
+            </p>
+            {useEventPlanning ? (
+              <EventPlanningLink eventType={activeFilter} className="btn-warm mt-6">
+                Start Planning
+              </EventPlanningLink>
+            ) : (
+              <PlanningLink className="btn-warm mt-6">Start Planning</PlanningLink>
+            )}
+          </div>
         )}
+
+        <article className="card mt-6 flex flex-col p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="max-w-lg">
+            <h3 className="font-semibold text-foreground">Custom package</h3>
+            <p className="font-description mt-2 text-sm text-muted">
+              Bespoke events built from scratch — props, labour, and planning scoped to your vision.
+            </p>
+          </div>
+          {useEventPlanning ? (
+            <EventPlanningLink eventType={activeFilter} className="btn-outline mt-6 shrink-0 md:mt-0">
+              Start Planning
+            </EventPlanningLink>
+          ) : (
+            <PlanningLink className="btn-outline mt-6 shrink-0 md:mt-0">
+              Start Planning
+            </PlanningLink>
+          )}
+        </article>
       </div>
     </section>
   );

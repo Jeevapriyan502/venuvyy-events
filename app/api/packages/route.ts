@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/auth";
-import { createServiceClient } from "@/lib/supabase";
+import { uploadPackageImage } from "@/lib/package-image";
+import { revalidatePublicPages } from "@/lib/revalidate-public";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const includeAll = searchParams.get("all") === "true";
+
+  if (includeAll) {
+    const user = await getAdminUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const packages = await prisma.package.findMany({
-    where: { isActive: true },
+    where: includeAll ? undefined : { isActive: true },
     orderBy: { createdAt: "desc" },
   });
+
   return NextResponse.json(packages);
 }
 
@@ -32,26 +44,7 @@ export async function POST(request: NextRequest) {
     let imageUrl: string | null = null;
 
     if (image && image.size > 0) {
-      const bucket = process.env.SUPABASE_STORAGE_BUCKET || "package-images";
-      const ext = image.name.split(".").pop() || "jpg";
-      const fileName = `${Date.now()}-${title.replace(/\s+/g, "-").toLowerCase()}.${ext}`;
-      const buffer = Buffer.from(await image.arrayBuffer());
-
-      const supabase = createServiceClient();
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, buffer, { contentType: image.type, upsert: false });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        return NextResponse.json(
-          { error: `Image upload failed: ${uploadError.message}. Create bucket "${bucket}" in Supabase Storage.` },
-          { status: 500 }
-        );
-      }
-
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(fileName);
-      imageUrl = urlData.publicUrl;
+      imageUrl = await uploadPackageImage(image, title.trim());
     }
 
     const pkg = await prisma.package.create({
@@ -65,9 +58,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    revalidatePublicPages();
+
     return NextResponse.json({ success: true, package: pkg }, { status: 201 });
   } catch (error) {
     console.error("Package create error:", error);
-    return NextResponse.json({ error: "Failed to create package." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to create package.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

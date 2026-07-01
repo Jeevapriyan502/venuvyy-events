@@ -1,6 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import EventTypeSelect from "@/components/EventTypeSelect";
+import EventDateInput from "@/components/EventDateInput";
+import { DEFAULT_EVENT_TYPE } from "@/lib/event-types";
 
 type FormState = {
   name: string;
@@ -14,7 +17,7 @@ type FormState = {
 const initialState: FormState = {
   name: "",
   email: "",
-  eventType: "Wedding",
+  eventType: DEFAULT_EVENT_TYPE,
   eventDate: "",
   guestCount: "",
   message: "",
@@ -83,15 +86,17 @@ export default function CustomerEnquiryForm() {
             <div className="grid gap-5 md:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm text-[#d4af37]">Event Type</span>
-                <select name="eventType" value={form.eventType} onChange={handleChange} className={inputClass}>
-                  <option>Wedding</option>
-                  <option>Corporate Event</option>
-                  <option>Private Party</option>
-                </select>
+                <EventTypeSelect name="eventType" value={form.eventType} onChange={handleChange} className={inputClass} />
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm text-[#d4af37]">Event Date</span>
-                <input required type="date" name="eventDate" value={form.eventDate} onChange={handleChange} className={inputClass} />
+                <EventDateInput
+                  required
+                  name="eventDate"
+                  value={form.eventDate}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
               </label>
             </div>
             <label className="block">

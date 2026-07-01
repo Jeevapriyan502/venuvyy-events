@@ -8,9 +8,13 @@ type EnquiryBody = {
   eventDate?: string;
   guestCount?: number;
   message?: string;
+  termsAccepted?: boolean;
 };
 
 function validate(body: EnquiryBody): string | null {
+  if (!body.termsAccepted) {
+    return "You must accept the terms and conditions to submit an enquiry.";
+  }
   if (!body.name?.trim()) return "Name is required.";
   if (!body.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
     return "Valid email is required.";

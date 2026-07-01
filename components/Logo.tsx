@@ -1,56 +1,70 @@
 import Image from "next/image";
 
 type LogoProps = {
-  variant?: "light" | "dark";
   showTagline?: boolean;
-  size?: "sm" | "md" | "lg";
+  showTitle?: boolean;
+  size?: "sm" | "md" | "lg" | "hero";
+  blend?: boolean;
+  animate?: boolean;
 };
 
 export default function Logo({
-  variant = "dark",
-  showTagline = true,
+  showTagline = false,
+  showTitle = false,
   size = "md",
+  blend = true,
+  animate = false,
 }: LogoProps) {
-  const isDark = variant === "dark";
-
   const sizes = {
-    sm: { img: 48, title: "text-lg", tagline: "text-[0.55rem]" },
-    md: { img: 64, title: "text-2xl md:text-3xl", tagline: "text-[0.65rem] md:text-xs" },
-    lg: { img: 96, title: "text-4xl md:text-5xl", tagline: "text-xs md:text-sm" },
+    sm: { w: 140, h: 40 },
+    md: { w: 180, h: 52 },
+    lg: { w: 240, h: 68 },
+    hero: { w: 320, h: 90 },
   };
 
   const s = sizes[size];
 
-  return (
-    <div className="flex items-center gap-3 md:gap-4">
-      <Image
-        src="/logo.png"
-        alt="Venuvyy Events"
-        width={s.img}
-        height={s.img}
-        className="h-auto w-auto shrink-0"
-        priority
-      />
-      <div className="flex flex-col">
-        <span
-          className={`font-logo leading-none tracking-[0.12em] ${s.title} ${
-            isDark
-              ? "bg-gradient-to-b from-[#f0d78c] via-[#d4af37] to-[#9a7b2e] bg-clip-text text-transparent"
-              : "text-white"
-          }`}
+  const image = (
+    <Image
+      src="/logo.png"
+      alt="Venuvyy Events"
+      width={s.w}
+      height={s.h}
+      className="h-auto w-auto max-h-full object-contain object-left"
+      style={{ width: "auto", height: "auto", maxHeight: s.h }}
+      priority
+    />
+  );
+
+  if (blend) {
+    return (
+      <div className={`logo-layered ${animate ? "logo-pop-in" : ""}`}>
+        <div className="logo-layer-back" aria-hidden />
+        <div className="logo-layer-mid" aria-hidden />
+        <div
+          className={`logo-layer-front ${size === "hero" ? "px-5 py-4" : "px-3 py-2"}`}
         >
-          VENUVYY EVENTS
-        </span>
-        {showTagline && (
-          <span
-            className={`font-tagline mt-1.5 uppercase tracking-[0.35em] ${s.tagline} ${
-              isDark ? "text-[#c9a227]" : "text-[#d4af37]/90"
-            }`}
-          >
-            Creating Moments, Capturing Memories
-          </span>
-        )}
+          {image}
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-3 ${animate ? "logo-pop-in" : ""}`}>
+      {image}
+      {(showTitle || showTagline) && (
+        <div className="flex flex-col">
+          {showTitle && (
+            <span className="text-sm font-semibold tracking-tight text-foreground">
+              Venuvyy Events
+            </span>
+          )}
+          {showTagline && (
+            <span className="text-xs text-muted">Creating Moments, Capturing Memories</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
