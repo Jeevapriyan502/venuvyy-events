@@ -9,6 +9,14 @@ import {
   consumePlanningEventType,
   PLANNING_EVENT_TYPE_EVENT,
 } from "@/lib/planning-preset";
+import {
+  GMAIL_VALIDATION_MESSAGE,
+  isValidGmail,
+  isValidIndianPhone,
+  PHONE_DIGIT_LIMIT,
+  PHONE_VALIDATION_MESSAGE,
+  sanitizePhoneInput,
+} from "@/lib/contact-validation";
 
 const TERMS = [
   "Custom props & décor are priced based on your design.",
@@ -67,13 +75,29 @@ export default function PlanningForm() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "phone" ? sanitizePhoneInput(value) : value,
+    }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!acceptedTerms) {
       setErrorMessage("Tick the box above to continue — takes two seconds.");
+      setStatus("error");
+      return;
+    }
+
+    if (!isValidGmail(form.email)) {
+      setErrorMessage(GMAIL_VALIDATION_MESSAGE);
+      setStatus("error");
+      return;
+    }
+
+    if (!isValidIndianPhone(form.phone)) {
+      setErrorMessage(PHONE_VALIDATION_MESSAGE);
       setStatus("error");
       return;
     }
@@ -98,6 +122,7 @@ export default function PlanningForm() {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
+          phone: form.phone,
           eventType: form.eventType,
           eventDate: form.eventDate,
           guestCount: Number(form.guestCount),
@@ -220,18 +245,26 @@ export default function PlanningForm() {
                       value={form.email}
                       onChange={handleChange}
                       className="planning-field"
-                      placeholder="you@email.com"
+                      placeholder="you@gmail.com"
+                      autoComplete="email"
+                      inputMode="email"
                     />
                   </label>
                   <label className="block">
                     <span className="sr-only">Phone</span>
                     <input
                       required
+                      type="tel"
                       name="phone"
                       value={form.phone}
                       onChange={handleChange}
                       className="planning-field"
-                      placeholder="WhatsApp / phone"
+                      placeholder="10-digit mobile"
+                      autoComplete="tel"
+                      inputMode="numeric"
+                      maxLength={PHONE_DIGIT_LIMIT}
+                      pattern="[6-9][0-9]{9}"
+                      title={PHONE_VALIDATION_MESSAGE}
                     />
                   </label>
                 </div>

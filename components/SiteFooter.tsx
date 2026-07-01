@@ -47,7 +47,7 @@ export default function SiteFooter() {
             </li>
             <li>
               <Link href="/sign-in" className="hover:text-foreground">
-                Admin Sign in
+                Sign in
               </Link>
             </li>
           </ul>

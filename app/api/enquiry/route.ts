@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  GMAIL_VALIDATION_MESSAGE,
+  isValidGmail,
+  isValidIndianPhone,
+  PHONE_VALIDATION_MESSAGE,
+} from "@/lib/contact-validation";
 
 type EnquiryBody = {
   name?: string;
   email?: string;
+  phone?: string;
   eventType?: string;
   eventDate?: string;
   guestCount?: number;
@@ -16,8 +23,11 @@ function validate(body: EnquiryBody): string | null {
     return "You must accept the terms and conditions to submit an enquiry.";
   }
   if (!body.name?.trim()) return "Name is required.";
-  if (!body.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
-    return "Valid email is required.";
+  if (!body.email?.trim() || !isValidGmail(body.email)) {
+    return GMAIL_VALIDATION_MESSAGE;
+  }
+  if (!body.phone?.trim() || !isValidIndianPhone(body.phone)) {
+    return PHONE_VALIDATION_MESSAGE;
   }
   if (!body.eventType?.trim()) return "Event type is required.";
   if (!body.eventDate?.trim()) return "Event date is required.";

@@ -4,6 +4,10 @@ import { FormEvent, useState } from "react";
 import EventTypeSelect from "@/components/EventTypeSelect";
 import EventDateInput from "@/components/EventDateInput";
 import { DEFAULT_EVENT_TYPE } from "@/lib/event-types";
+import {
+  GMAIL_VALIDATION_MESSAGE,
+  isValidGmail,
+} from "@/lib/contact-validation";
 
 type FormState = {
   name: string;
@@ -39,6 +43,13 @@ export default function CustomerEnquiryForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (!isValidGmail(form.email)) {
+      setErrorMessage(GMAIL_VALIDATION_MESSAGE);
+      setStatus("error");
+      return;
+    }
+
     setStatus("loading");
     setErrorMessage("");
 
@@ -80,7 +91,17 @@ export default function CustomerEnquiryForm() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm text-[#d4af37]">Email</span>
-                <input required type="email" name="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="you@email.com" />
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="you@gmail.com"
+                  autoComplete="email"
+                  inputMode="email"
+                />
               </label>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
